@@ -1,0 +1,51 @@
+# ---- Secrets (never commit) ----
+# Real environment files are ignored; commit the .env.example templates instead.
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# ---- Node / JavaScript ----
+node_modules/
+npm-debug.*
+yarn-error.*
+*.log
+
+# ---- Expo ----
+.expo/
+dist/
+web-build/
+*.orig.*
+
+# ---- React Native / Metro ----
+.metro-health-check*
+.jest/
+
+# ---- Android (native build output) ----
+android/build/
+android/app/build/
+android/.gradle/
+android/.cxx/
+android/local.properties
+*.keystore
+!debug.keystore
+*.jks
+*.apk
+*.aab
+
+# ---- iOS ----
+ios/Pods/
+ios/build/
+*.mobileprovision
+*.p8
+*.p12
+*.key
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ---- PHP backend: local caches written by build_snapshot.php ----
+api/*.cache

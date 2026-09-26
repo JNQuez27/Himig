@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Himig",
+    "slug": "himig",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F5EED2",
+    "splash": {
+      "backgroundColor": "#132228"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.himig.app"
+    },
+    "android": {
+      "package": "com.himig.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#132228"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
