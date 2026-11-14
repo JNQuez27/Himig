@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Himig - Join the room</title>
+<style>
+  :root { --amber:#EBAE29; --teal:#589C80; --ink:#132228; --cream:#F5EED2; --soft:#1D3238; --muted:rgba(245,238,210,.6); }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; background: var(--ink); color: var(--cream); margin: 0 auto; max-width: 560px; padding: 20px 16px 40px; }
+  h1 { color: var(--amber); margin: 0 0 4px; font-size: 28px; }
+  h2 { font-size: 18px; margin: 24px 0 8px; }
+  p { color: var(--muted); margin: 4px 0; }
+  label { display: block; font-weight: 700; color: var(--muted); font-size: 13px; margin: 14px 0 6px; }
+  input { width: 100%; min-height: 50px; padding: 0 14px; border-radius: 14px; border: 1px solid #24424A; background: #24424A; color: var(--cream); font-size: 16px; }
+  button { font: inherit; cursor: pointer; border: 0; min-height: 48px; border-radius: 999px; font-weight: 800; font-size: 16px; padding: 0 20px; background: var(--amber); color: var(--ink); }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--cream); outline-offset: 2px; }
+  button.round { width: 48px; padding: 0; background: #4ED197; }
+  button.plain { background: transparent; color: var(--muted); min-width: 44px; padding: 0 8px; }
+  .wide { width: 100%; margin-top: 18px; }
+  .card { background: var(--soft); border: 1px solid rgba(245,238,210,.08); border-radius: 16px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; min-height: 60px; }
+  .card.now { border-color: var(--teal); }
+  .grow { flex: 1; min-width: 0; }
+  .t { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .s { color: var(--muted); font-size: 13px; }
+  .hidden { display: none; }
+  #err { color: #E5645B; min-height: 1.4em; }
+</style>
+
+<h1>Himig</h1>
+<p id="where">Join the karaoke room</p>
+
+<form id="entry">
+  <label for="name">Your name</label>
+  <input id="name" maxlength="30" autocomplete="nickname" required>
+  <label for="code">Room code</label>
+  <input id="code" maxlength="4" autocapitalize="characters" autocomplete="off" required style="text-transform:uppercase;letter-spacing:.3em;font-weight:900">
+  <button class="wide">Join</button>
+  <p id="err" role="alert"></p>
+</form>
+
+<div id="room" class="hidden">
+  <h2>Now singing</h2>
+  <div id="now"></div>
+  <h2 id="nextTitle">Up next</h2>
+  <div id="queue"></div>
+  <h2>Add a song</h2>
+  <div id="songs"><p>Loading songs...</p></div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, props, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
+  let ws, room, want = null;
+
+  const send = (msg) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(msg)); };
+
+  function connect() {
+    ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/rooms/${want.code}/ws?name=${encodeURIComponent(want.name)}`);
+    ws.onmessage = (e) => {
+      const m = JSON.parse(e.data);
+      if (m.type === 'state') { room = m.room; render(); }
+      if (m.type === 'error') { want = null; $('err').textContent = m.message; }
+    };
+    ws.onclose = () => { if (want) setTimeout(connect, 2000); };
+  }
+
+  const info = (title, sub) => el('div', { className: 'grow' }, el('div', { className: 't', textContent: title }), el('div', { className: 's', textContent: sub }));
+
+  function render() {
+    $('entry').classList.add('hidden');
+    $('room').classList.remove('hidden');
+    $('where').textContent = `Room ${room.code}  ·  ${room.members.length} here`;
+    const cur = room.current;
+    $('now').replaceChildren(cur
+      ? el('div', { className: 'card now' }, info(cur.song.title, `${cur.singer}  ·  ${cur.song.artist}`),
+          el('button', { className: 'round', textContent: room.playing ? '❚❚' : '▶', ariaLabel: room.playing ? 'Pause' : 'Play',
+                         onclick: () => send({ type: room.playing ? 'pause' : 'play' }) }),
+          el('button', { className: 'round', textContent: '▶▶', ariaLabel: 'Skip to the next song', onclick: () => send({ type: 'next', qid: cur.qid }) }))
+      : el('p', { textContent: 'Nothing playing. Add a song to start.' }));
+    $('nextTitle').textContent = room.queue.length ? `Up next (${room.queue.length})` : 'Up next';
+    $('queue').replaceChildren(...(room.queue.length ? room.queue.map((q) =>
+      el('div', { className: 'card' }, info(q.song.title, `${q.singer}  ·  ${q.song.artist}`),
+        el('button', { className: 'plain', textContent: '✕', ariaLabel: `Remove ${q.song.title}`, onclick: () => send({ type: 'remove', qid: q.qid }) })))
+      : [el('p', { textContent: 'The queue is empty.' })]));
+  }
+
+  async function loadSongs() {
+    const songs = (await (await fetch('/songs')).json()).filter((s) => s.status === 'ready');
+    $('songs').replaceChildren(...(songs.length ? songs.map((s) =>
+      el('div', { className: 'card' }, info(s.title, s.artist),
+        el('button', { textContent: 'Add', ariaLabel: `Add ${s.title} to the queue`, onclick: () => send({ type: 'add', song_id: s.id }) })))
+      : [el('p', { textContent: 'No songs on the server yet.' })]));
+  }
+
+  $('code').value = (new URLSearchParams(location.search).get('room') || '').toUpperCase();
+  $('name').value = localStorage.getItem('himig_name') || '';
+  $('entry').addEventListener('submit', (e) => {
+    e.preventDefault();
+    want = { code: $('code').value.trim().toUpperCase(), name: $('name').value.trim() || 'Guest' };
+    localStorage.setItem('himig_name', want.name);
+    $('err').textContent = '';
+    connect();
+    loadSongs();
+  });
+</script>
+</html>

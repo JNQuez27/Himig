@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const K_ONBOARDED = '@himig/onboarded';
 const K_USERS = '@himig/users';
 const K_SESSION = '@himig/session';
+const K_GUEST = '@himig/guest';
 
 const read = async (k, f) => {
   try {
@@ -53,3 +54,7 @@ export async function signIn({ email, password }) {
 }
 
 export const signOut = () => AsyncStorage.removeItem(K_SESSION).catch(() => {});
+
+// An account is optional: a guest uses the whole app without one.
+export const getGuest = () => read(K_GUEST, false);
+export const setGuest = (on) => write(K_GUEST, on);

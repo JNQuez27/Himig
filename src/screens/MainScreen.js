@@ -3,13 +3,13 @@ import { View, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GradientBackground from '../components/GradientBackground';
 import HomeScreen from './HomeScreen';
-import TrendingScreen from './TrendingScreen';
-import MusicScreen from './MusicScreen';
+import CatalogScreen from './CatalogScreen';
+import LibraryScreen from './LibraryScreen';
 import ProfileScreen from './ProfileScreen';
 import { useTab } from '../context/TabContext';
 import { colors } from '../theme/colors';
 
-// The bottom nav + mini-player are a persistent overlay in AppNavigator's Chrome,
+// The bottom nav is a persistent overlay in AppNavigator's Chrome,
 // so this screen only renders the active tab's body.
 export default function MainScreen({ navigation }) {
   const { tab } = useTab();
@@ -24,8 +24,8 @@ export default function MainScreen({ navigation }) {
           <View style={[styles.fill, tab !== 'home' && styles.hidden]}>
             <HomeScreen navigation={navigation} />
           </View>
-          {tab === 'trending' && <TrendingScreen navigation={navigation} />}
-          {tab === 'music' && <MusicScreen navigation={navigation} />}
+          {tab === 'catalog' && <CatalogScreen navigation={navigation} />}
+          {tab === 'music' && <LibraryScreen navigation={navigation} />}
           {tab === 'profile' && <ProfileScreen navigation={navigation} />}
         </View>
       </SafeAreaView>

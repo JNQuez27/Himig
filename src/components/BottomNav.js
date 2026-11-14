@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTab } from '../context/TabContext';
 import { View, Pressable, StyleSheet, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
@@ -7,7 +8,7 @@ import { colors, radius } from '../theme/colors';
 
 const TABS = [
   { key: 'home', icon: 'home-outline', active: 'home' },
-  { key: 'trending', icon: 'flame-outline', active: 'flame' },
+  { key: 'catalog', icon: 'mic-outline', active: 'mic' },
   { key: 'music', icon: 'musical-notes-outline', active: 'musical-notes' },
   { key: 'profile', icon: 'person-outline', active: 'person' },
 ];
@@ -46,6 +47,7 @@ function barPath(w, cx) {
 
 export default function BottomNav({ onTabChange }) {
   const insets = useSafeAreaInsets();
+  const { tab } = useTab();
   const [active, setActive] = useState(0);
   const [ready, setReady] = useState(false);
   const [barW, setBarW] = useState(0);
@@ -80,6 +82,16 @@ export default function BottomNav({ onTabChange }) {
     // always notify (so tapping the active tab from another screen still routes
     // back to Main); only the animation is skipped when it's already active.
     onTabChange && onTabChange(TABS[i].key);
+    move(i);
+  };
+
+  // Follow tab changes made elsewhere (e.g. a Home button opening the Catalog).
+  useEffect(() => {
+    const i = TABS.findIndex((t) => t.key === tab);
+    if (i >= 0 && ready) move(i);
+  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const move = (i) => {
     if (i === active) return;
     const prev = active;
     setActive(i);

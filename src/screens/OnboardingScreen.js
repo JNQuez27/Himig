@@ -15,9 +15,9 @@ import { useAuth } from '../context/AuthContext';
 import { colors, space, radius, shadow } from '../theme/colors';
 
 const SLIDES = [
-  { icon: 'musical-notes', tint: colors.amber, title: 'Discover OPM', body: 'Explore songs from the greatest Filipina voices — all in one place.' },
-  { icon: 'cloud-done', tint: colors.online, title: 'Online or offline', body: 'Stream trending songs when you’re online, and keep your library ready offline.' },
-  { icon: 'heart', tint: colors.teal, title: 'Your own library', body: 'Build and manage your collection of artists and favorites, your way.' },
+  { icon: 'mic', tint: colors.amber, title: 'Any song, karaoke', body: 'Pick a song on your phone. Himig removes the vocals and shows the lyrics in time.' },
+  { icon: 'cloud-done', tint: colors.online, title: 'Sing offline', body: 'Downloaded songs work with no internet: music, instrumental and lyrics.' },
+  { icon: 'people', tint: colors.teal, title: 'No account needed', body: 'Start singing right away. Create an account later only if you want one.' },
 ];
 
 export default function OnboardingScreen() {

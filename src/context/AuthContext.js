@@ -6,6 +6,7 @@ import React, {
   useCallback,
 } from 'react';
 import * as auth from '../data/auth';
+import { loadServerUrl } from '../data/api';
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
@@ -14,13 +15,17 @@ export function AuthProvider({ children }) {
   const [ready, setReady] = useState(false);
   const [onboarded, setOnboarded] = useState(false);
   const [user, setUser] = useState(null);
+  const [guest, setGuest] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const [ob, session] = await Promise.all([
+      const [ob, session, g] = await Promise.all([
         auth.getOnboarded(),
         auth.getSession(),
+        auth.getGuest(),
+        loadServerUrl(), // before any screen talks to the server
       ]);
+      setGuest(g);
       setOnboarded(ob);
       setUser(session);
       setReady(true);
@@ -49,6 +54,14 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = { ready, onboarded, user, finishOnboarding, signUp, signIn, signOut };
+  // Skip the account: use the app as a guest. `false` reopens the sign-in screen.
+  const setGuestMode = useCallback((on) => {
+    auth.setGuest(on);
+    setGuest(on);
+  }, []);
+
+  const value = {
+    ready, onboarded, user, guest, finishOnboarding, signUp, signIn, signOut, setGuestMode,
+  };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

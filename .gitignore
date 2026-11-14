@@ -47,5 +47,9 @@ Thumbs.db
 .vscode/
 .idea/
 
-# ---- PHP backend: local caches written by build_snapshot.php ----
-api/*.cache
+# ---- Python server ----
+server/.venv/
+server/test_songs/
+server/test_out/
+server/data/
+__pycache__/

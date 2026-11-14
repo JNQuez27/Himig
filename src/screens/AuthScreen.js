@@ -17,7 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { colors, space, radius, shadow } from '../theme/colors';
 
 export default function AuthScreen() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, setGuestMode } = useAuth();
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -112,6 +112,22 @@ export default function AuthScreen() {
             </Text>
 
             <Text style={styles.note}>Your account stays on this device.</Text>
+
+            <View style={styles.orRow}>
+              <View style={styles.orLine} />
+              <Text style={styles.orText}>or</Text>
+              <View style={styles.orLine} />
+            </View>
+            <Pressable
+              onPress={() => setGuestMode(true)}
+              style={({ pressed }) => [styles.guest, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+            >
+              <Text style={styles.guestText}>Continue without an account</Text>
+            </Pressable>
+            <Text style={styles.note}>
+              Everything works as a guest. You can create an account later from Profile.
+            </Text>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -160,4 +176,12 @@ const styles = StyleSheet.create({
   switch: { color: colors.muted, fontSize: 14, textAlign: 'center', marginTop: space.lg },
   switchLink: { color: colors.amber, fontWeight: '800' },
   note: { color: colors.mutedSoft, fontSize: 12, textAlign: 'center', marginTop: space.sm },
+  orRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: space.lg },
+  orLine: { flex: 1, height: 1, backgroundColor: colors.hairline },
+  orText: { color: colors.mutedSoft, fontSize: 12, fontWeight: '700' },
+  guest: {
+    minHeight: 52, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.teal,
+    alignItems: 'center', justifyContent: 'center', marginTop: space.md,
+  },
+  guestText: { color: colors.cream, fontSize: 15, fontWeight: '800' },
 });

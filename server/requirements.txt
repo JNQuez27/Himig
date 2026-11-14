@@ -1,0 +1,10 @@
+demucs-onnx==0.3.4
+fastapi==0.162.7
+huggingface_hub==2.4.0
+lameenc==1.9.0
+onnxruntime==1.32.0
+python-multipart==0.0.33
+segno==1.6.6
+tokenizers==0.23.3
+uvicorn==0.54.0
+websockets==17.4

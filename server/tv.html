@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Himig - Big screen</title>
+<style>
+  :root { --amber:#EBAE29; --teal:#589C80; --ink:#132228; --cream:#F5EED2; --soft:#1D3238; --muted:rgba(245,238,210,.6); }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font-family: system-ui, "Segoe UI", Roboto, sans-serif; color: var(--cream);
+         background: linear-gradient(160deg, #1A2E33, #132228 45%, #0C171B); overflow: hidden; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 999px; background: var(--amber);
+           color: var(--ink); font-weight: 800; padding: 1.1vw 2.6vw; font-size: 1.6vw; min-height: 48px; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--cream); outline-offset: 3px; }
+  .hidden { display: none !important; }
+
+  /* Setup */
+  #setup { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vw; text-align: center; padding: 4vw; }
+  #setup h1 { font-size: 5vw; margin: 0; color: var(--amber); }
+  #setup p { font-size: 1.6vw; color: var(--muted); margin: 0; max-width: 46ch; }
+  #setup .row { display: flex; gap: 1vw; align-items: center; }
+  #setup input { font: inherit; font-size: 2.4vw; font-weight: 900; letter-spacing: .5em; text-align: center; text-transform: uppercase;
+                 width: 9em; padding: .4em 0 .4em .5em; border-radius: 16px; border: 2px solid var(--teal); background: var(--soft); color: var(--cream); }
+  #setup button.ghost { background: transparent; color: var(--cream); border: 2px solid var(--teal); }
+  #msg { color: #E5645B; min-height: 1.5em; }
+
+  /* Stage */
+  #stage { height: 100%; display: grid; grid-template-columns: 1fr 24vw; }
+  main { display: flex; flex-direction: column; padding: 3vw 3vw 2vw 4vw; min-width: 0; }
+  header .song { font-size: 2.6vw; font-weight: 900; }
+  header .who { font-size: 1.6vw; color: var(--teal); font-weight: 700; margin-top: .3vw; }
+  #lyrics { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2vw; text-align: center; }
+  #lyrics .past { font-size: 2.4vw; color: rgba(245,238,210,.35); font-weight: 600; min-height: 1.2em; }
+  #lyrics .now  { font-size: 5.4vw; line-height: 1.15; color: var(--amber); font-weight: 900; }
+  #lyrics .next { font-size: 3vw; font-weight: 700; min-height: 1.2em; }
+  #lyrics .later{ font-size: 2.4vw; color: var(--muted); font-weight: 600; min-height: 1.2em; }
+  #idle { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 1.5vw; }
+  #idle .big { font-size: 4vw; font-weight: 900; }
+  #idle .sub { font-size: 1.8vw; color: var(--muted); }
+  #bar { height: .5vw; min-height: 4px; border-radius: 99px; background: #24424A; overflow: hidden; }
+  #fill { height: 100%; width: 0; background: #4ED197; }
+  #note { font-size: 1.1vw; color: rgba(245,238,210,.4); margin-top: .8vw; min-height: 1.4em; }
+
+  aside { background: rgba(29,50,56,.75); border-left: 1px solid rgba(245,238,210,.08); padding: 2vw; display: flex; flex-direction: column; gap: 1.2vw; min-width: 0; }
+  .join { background: var(--amber); color: var(--ink); border-radius: 1.6vw; padding: 1.2vw; text-align: center; }
+  .join .label { font-size: .9vw; font-weight: 900; letter-spacing: .1em; opacity: .75; }
+  .join .code { font-size: 4vw; font-weight: 900; letter-spacing: .25em; margin-left: .25em; line-height: 1.1; }
+  .join img { width: 100%; max-width: 14vw; border-radius: .8vw; display: block; margin: .8vw auto .4vw; }
+  .join .hint { font-size: .95vw; font-weight: 700; }
+  aside h2 { font-size: 1.3vw; margin: .6vw 0 0; }
+  #queue { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .6vw; overflow: hidden; }
+  #queue li { background: var(--soft); border-radius: .8vw; padding: .7vw .9vw; }
+  #queue .t { font-size: 1.15vw; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #queue .s { font-size: .95vw; color: var(--muted); }
+  #people { font-size: 1vw; color: var(--muted); margin-top: auto; }
+  @media (prefers-reduced-motion: no-preference) { #lyrics .now { transition: opacity .2s; } }
+</style>
+
+<section id="setup">
+  <h1>Himig</h1>
+  <p>Put this page on the TV. It shows the lyrics, plays the music, and lets phones join.</p>
+  <div class="row">
+    <button id="create">Start a new room</button>
+  </div>
+  <p>or show a room that already exists</p>
+  <form class="row" id="joinForm">
+    <label class="hidden" for="code">Room code</label>
+    <input id="code" maxlength="4" placeholder="ABCD" autocomplete="off" aria-label="Room code">
+    <button class="ghost">Show room</button>
+  </form>
+  <p id="msg" role="alert"></p>
+</section>
+
+<section id="stage" class="hidden">
+  <main>
+    <header>
+      <div class="song" id="song">&nbsp;</div>
+      <div class="who" id="who">&nbsp;</div>
+    </header>
+    <div id="idle">
+      <div class="big">Pick a song to start</div>
+      <div class="sub">Scan the code with your phone, or open Himig and enter the room code.</div>
+    </div>
+    <div id="lyrics" class="hidden" aria-live="off">
+      <div class="past" id="l0"></div>
+      <div class="now" id="l1"></div>
+      <div class="next" id="l2"></div>
+      <div class="later" id="l3"></div>
+    </div>
+    <div id="bar"><div id="fill"></div></div>
+    <div id="note"></div>
+  </main>
+  <aside>
+    <div class="join">
+      <div class="label">ROOM CODE</div>
+      <div class="code" id="roomCode"></div>
+      <img id="qr" alt="QR code to join this room from a phone">
+      <div class="hint">Scan to join and add songs</div>
+    </div>
+    <h2>Up next</h2>
+    <ol id="queue"></ol>
+    <div id="people"></div>
+  </aside>
+</section>
+
+<audio id="audio" preload="auto"></audio>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const audio = $('audio');
+  let ws, room, qid = null, lines = [], code = null;
+
+  // "[mm:ss.xx] text" -> [{time, text}] (same rules as the app's src/data/lrc.js)
+  function parseLrc(lrc) {
+    const stamp = /\[(\d+):(\d+(?:\.\d+)?)\]/g, out = [];
+    for (const line of String(lrc || '').split(/\r?\n/)) {
+      const text = line.replace(stamp, '').trim();
+      for (const m of line.matchAll(stamp)) out.push({ time: Number(m[1]) * 60 + Number(m[2]), text });
+    }
+    return out.sort((a, b) => a.time - b.time);
+  }
+
+  function send(msg) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(msg)); }
+
+  function connect() {
+    ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/rooms/${code}/ws?display=1`);
+    ws.onmessage = (e) => {
+      const m = JSON.parse(e.data);
+      if (m.type === 'state') { room = m.room; render(); }
+      if (m.type === 'error') { code = null; $('msg').textContent = m.message; show(false); }
+    };
+    ws.onclose = () => { if (code) setTimeout(connect, 2000); };  // server restart or network blip
+  }
+
+  function show(stage) {
+    $('setup').classList.toggle('hidden', stage);
+    $('stage').classList.toggle('hidden', !stage);
+  }
+
+  async function start(c) {
+    code = c.toUpperCase();
+    history.replaceState(null, '', `?room=${code}`);
+    $('roomCode').textContent = code;
+    $('qr').src = `/rooms/${code}/qr.svg`;
+    show(true);
+    connect();
+  }
+
+  function render() {
+    const cur = room.current;
+    $('song').textContent = cur ? cur.song.title : 'Himig Karaoke';
+    $('who').textContent = cur ? `${cur.singer} is singing  ·  ${cur.song.artist}` : `Room ${room.code}`;
+    $('idle').classList.toggle('hidden', !!cur);
+    $('lyrics').classList.toggle('hidden', !cur);
+    $('people').textContent = room.members.length
+      ? `${room.members.length} here: ${room.members.map((m) => m.name).join(', ')}` : 'Waiting for people to join';
+    $('queue').replaceChildren(...room.queue.slice(0, 6).map((q) => {
+      const li = document.createElement('li');
+      li.append(Object.assign(document.createElement('div'), { className: 't', textContent: q.song.title }),
+                Object.assign(document.createElement('div'), { className: 's', textContent: `${q.singer}  ·  ${q.song.artist}` }));
+      return li;
+    }));
+    if (!room.queue.length) $('queue').append(Object.assign(document.createElement('li'), { textContent: 'Nothing queued', className: 's' }));
+
+    if ((cur && cur.qid) !== qid) {           // a different song (or none) is now current
+      qid = cur ? cur.qid : null;
+      lines = [];
+      $('note').textContent = '';
+      if (cur) {
+        audio.src = cur.song.instrumental;
+        if (cur.song.lyrics) fetch(cur.song.lyrics).then((r) => r.text()).then((t) => {
+          if (qid !== cur.qid) return;
+          lines = parseLrc(t);
+          $('note').textContent = cur.song.lyrics_auto ? 'Auto-generated lyrics, may contain mistakes' : '';
+        });
+      } else { audio.removeAttribute('src'); audio.load(); $('fill').style.width = '0'; }
+    }
+    if (cur) {
+      if (room.playing && audio.paused) audio.play().catch(() => { $('note').textContent = 'Click anywhere on this page to allow sound.'; });
+      if (!room.playing && !audio.paused) audio.pause();
+    }
+  }
+
+  function tick() {
+    if (qid && audio.duration) {
+      const t = audio.currentTime;
+      $('fill').style.width = `${(t / audio.duration) * 100}%`;
+      let i = -1;
+      while (i + 1 < lines.length && lines[i + 1].time <= t) i++;
+      const at = (k) => (lines[k] && lines[k].text) || '';
+      $('l0').textContent = at(i - 1);
+      $('l1').textContent = lines.length ? (i < 0 ? '♪' : at(i) || '♪') : 'No lyrics for this song';
+      $('l2').textContent = at(i + 1);
+      $('l3').textContent = at(i + 2);
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  audio.addEventListener('ended', () => send({ type: 'next', qid }));
+  audio.addEventListener('error', () => { if (qid) { $('note').textContent = 'Could not load this song, skipping.'; send({ type: 'next', qid }); } });
+  // Browsers block sound until the page is clicked once.
+  document.addEventListener('click', () => { if (room && room.current && room.playing && audio.paused) audio.play().catch(() => {}); });
+
+  $('create').addEventListener('click', async () => {
+    const res = await fetch('/rooms', { method: 'POST' });
+    start((await res.json()).code);
+  });
+  $('joinForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const c = $('code').value.trim().toUpperCase();
+    const res = await fetch(`/rooms/${encodeURIComponent(c)}`);
+    if (res.ok) start(c); else $('msg').textContent = 'No room with that code.';
+  });
+
+  const preset = new URLSearchParams(location.search).get('room');
+  if (preset) fetch(`/rooms/${encodeURIComponent(preset)}`).then((r) => r.ok && start(preset));
+</script>
+</html>

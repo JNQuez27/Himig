@@ -1,15 +1,21 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { useLibrary, mb } from '../context/LibraryContext';
+import { getServerUrl, setServerUrl } from '../data/api';
 import { colors, space, radius, shadow } from '../theme/colors';
 
 export default function ProfileScreen() {
-  const { artists } = useApp();
-  const { user, signOut } = useAuth();
-  const favorites = artists.filter((a) => a.favorite).length;
-  const custom = artists.filter((a) => a.custom).length;
+  const { user, signOut, setGuestMode } = useAuth();
+  const library = useLibrary();
+  const [server, setServer] = useState(getServerUrl());
+  const [saved, setSaved] = useState(true);
+
+  const saveServer = async () => {
+    setServer(await setServerUrl(server));
+    setSaved(true);
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -17,33 +23,71 @@ export default function ProfileScreen() {
         <View style={styles.avatar}>
           <Ionicons name="person" size={40} color={colors.ink} />
         </View>
-        <Text style={styles.name}>{user?.name || 'OPM Fan'}</Text>
-        <Text style={styles.handle}>{user?.email || 'Listening since 2024'}</Text>
+        <Text style={styles.name}>{user?.name || 'Guest'}</Text>
+        <Text style={styles.handle}>{user?.email || 'No account, everything stays on this phone'}</Text>
       </View>
 
       <View style={styles.statRow}>
-        <Stat value={artists.length} label="Artists" />
-        <Stat value={favorites} label="Favorites" />
-        <Stat value={custom} label="Added" />
+        <Stat value={library.songs.length} label="Songs" />
+        <Stat value={library.recent.length} label="Sung" />
+        <Stat value={library.pending.length} label="Preparing" />
       </View>
 
       <Text style={styles.section}>About</Text>
       <View style={styles.card}>
-        <Row icon="musical-notes-outline" label="Library" meta={`${artists.length} artists`} />
+        <Row icon="person-outline" label="Account" meta={user ? 'Signed in' : 'Guest'} />
         <Divider />
-        <Row icon="heart-outline" label="Favorites" meta={`${favorites}`} />
-        <Divider />
-        <Row icon="flame-outline" label="Trending" meta="Auto when online" />
+        <Row icon="cloud-done-outline" label="Offline storage" meta={mb(library.bytes)} />
         <Divider />
         <Row icon="information-circle-outline" label="Version" meta="1.0.0" />
       </View>
 
-      <Pressable onPress={signOut} style={styles.signOut}>
-        <Ionicons name="log-out-outline" size={20} color={colors.danger} />
-        <Text style={styles.signOutText}>Sign out</Text>
-      </Pressable>
+      <Text style={styles.section}>Karaoke server</Text>
+      <View style={[styles.card, { paddingVertical: space.md }]}>
+        <Text style={styles.serverHelp}>
+          Where songs are prepared and rooms are hosted. For a party with no internet, run the
+          server on a laptop and enter the address it prints.
+        </Text>
+        <View style={styles.serverRow}>
+          <TextInput
+            style={styles.serverInput}
+            value={server}
+            onChangeText={(t) => { setServer(t); setSaved(false); }}
+            placeholder="http://192.168.1.5:8000"
+            placeholderTextColor={colors.mutedSoft}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+            accessibilityLabel="Karaoke server address"
+          />
+          <Pressable
+            onPress={saveServer}
+            disabled={saved}
+            style={[styles.serverBtn, saved && { opacity: 0.5 }]}
+            accessibilityRole="button"
+          >
+            <Text style={styles.serverBtnText}>{saved ? 'Saved' : 'Save'}</Text>
+          </Pressable>
+        </View>
+      </View>
 
-      <Text style={styles.footer}>Himig · Offline-first OPM library</Text>
+      {user ? (
+        <Pressable onPress={signOut} style={styles.signOut} accessibilityRole="button">
+          <Ionicons name="log-out-outline" size={20} color={colors.danger} />
+          <Text style={styles.signOutText}>Sign out</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          onPress={() => setGuestMode(false)}
+          style={[styles.signOut, { backgroundColor: colors.amber }]}
+          accessibilityRole="button"
+        >
+          <Ionicons name="person-add-outline" size={20} color={colors.ink} />
+          <Text style={[styles.signOutText, { color: colors.ink }]}>Create an account or sign in</Text>
+        </Pressable>
+      )}
+
+      <Text style={styles.footer}>Himig · Karaoke that works offline</Text>
     </ScrollView>
   );
 }
@@ -97,6 +141,17 @@ const styles = StyleSheet.create({
   rowSub: { color: colors.mutedSoft, fontSize: 12, marginTop: 2 },
   rowMeta: { color: colors.mutedSoft, fontSize: 14, fontWeight: '600' },
   divider: { height: 1, backgroundColor: colors.hairline },
+  serverHelp: { color: colors.muted, fontSize: 13, lineHeight: 19 },
+  serverRow: { flexDirection: 'row', gap: space.sm, marginTop: space.sm },
+  serverInput: {
+    flex: 1, minHeight: 48, backgroundColor: colors.inkSofter, borderRadius: radius.md,
+    paddingHorizontal: space.md, color: colors.cream, fontSize: 15,
+  },
+  serverBtn: {
+    minHeight: 48, paddingHorizontal: space.lg, borderRadius: radius.md, backgroundColor: colors.amber,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  serverBtnText: { color: colors.ink, fontSize: 15, fontWeight: '800' },
   footer: { color: colors.mutedSoft, fontSize: 12, textAlign: 'center', marginTop: space.sm },
   signOut: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
